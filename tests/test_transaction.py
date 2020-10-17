@@ -4,7 +4,8 @@ from bitsv.exceptions import InsufficientFunds
 from bitsv.network.meta import Unspent
 from bitsv.transaction import (
     TxIn, calc_txid, create_p2pkh_transaction, construct_input_block,
-    construct_output_block, estimate_tx_fee, sanitize_tx_data
+    construct_output_block, estimate_tx_fee,get_op_pushdata_code,
+    sanitize_tx_data
 )
 from bitsv.utils import hex_to_bytes
 from bitsv.wallet import PrivateKey
@@ -102,7 +103,7 @@ class TestSanitizeTxData:
                              Unspent(10000, 0, '', 0)]
         outputs_original = [(BITCOIN_ADDRESS_TEST_COMPRESSED, 1000, 'satoshi')]
 
-        unspents, outputs = sanitize_tx_data(
+        _, outputs = sanitize_tx_data(
             unspents_original, outputs_original, fee=5, leftover=RETURN_ADDRESS,
             combine=True, message='hello'
         )
@@ -118,7 +119,7 @@ class TestSanitizeTxData:
 
         BYTES = len(b'hello').to_bytes(1, byteorder='little') + b'hello'
 
-        unspents, outputs = sanitize_tx_data(
+        _, outputs = sanitize_tx_data(
             unspents_original, outputs_original, fee=5, leftover=RETURN_ADDRESS,
             combine=True, message=BYTES, custom_pushdata=True
         )
@@ -288,6 +289,12 @@ class TestConstructOutputBlock:
 
     def test_message(self):
         assert construct_output_block(OUTPUTS + MESSAGES) == hex_to_bytes(OUTPUT_BLOCK_MESSAGES)
+
+    def test_pushdata_code(self):
+        sizes = ((0x4C, 1), (0xff, 2), (0xffff, 3), (0x10000, 5))
+        for size, expected_len in sizes:
+            push_data = get_op_pushdata_code(b'\x41' * size)
+            assert len(push_data) == expected_len
 
     def test_long_message(self):
         amount = b'\x00\x00\x00\x00\x00\x00\x00\x00'

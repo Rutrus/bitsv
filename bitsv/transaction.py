@@ -157,7 +157,7 @@ def sanitize_tx_data(unspents, outputs, fee, leftover, combine=True, message=Non
         try:
             message = message.encode('utf-8')
         except AttributeError:
-            pass  # assume message is already a bytes-like object
+            message = bytes(message)
 
         message_chunks = chunk_data(message, MESSAGE_LIMIT)
 
